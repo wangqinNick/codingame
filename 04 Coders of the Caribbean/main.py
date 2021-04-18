@@ -18,7 +18,7 @@ def main():
         def getLegalActions(self, playerId):
             possible_actions = []
             for i in range(5):
-                next_coord = self.my_ships[0].coordinate[0] + 
+                pass
 
 
     class Barrel:

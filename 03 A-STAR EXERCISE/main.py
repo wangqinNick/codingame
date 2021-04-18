@@ -27,11 +27,36 @@ def expand(nodeIndex, successors):
             possible_successors.append(successor)
         elif successor[1] == nodeIndex:
             possible_successors.append((successor[1], successor[0], successor[2]))
+    possible_successors.sort()
     return possible_successors
 
 
 def aStarSearch(start, goal, h_values, successors):
     """Search the node that has the lowest combined cost and heuristic first."""
+
+    class Stack:
+        "A container with a last-in-first-out (LIFO) queuing policy."
+
+        def __init__(self):
+            self.list = []
+
+        def push(self, item):
+            "Push 'item' onto the stack"
+            self.list.append(item)
+
+        def pop(self):
+            "Pop the most recently pushed item from the stack"
+            return self.list.pop()
+
+        def __len__(self):
+            return len(self.list)
+
+        def isEmpty(self):
+            "Returns true if the stack is empty"
+            return len(self.list) == 0
+
+        def __contains__(self, item):
+            return item in self.list
 
     class PriorityQueue:
         """
@@ -79,6 +104,18 @@ def aStarSearch(start, goal, h_values, successors):
             self.g_value = prev_cost + cost
             self.f = self.g_value + h_value  # for any node, f(n) = g(n) + h(n)
 
+        def __lt__(self, other):
+            if self.f < other.f: return True
+            if self.f > other.f: return False
+            if self.f == other.f:
+                if self.index < other.index: return True
+            return False
+
+        def __eq__(self, other):
+            if self.f == other.f and self.index == other.index:
+                return True
+            return False
+
     startNode = Node(index=start,
                      parent=None,
                      prev_cost=0,
@@ -86,8 +123,8 @@ def aStarSearch(start, goal, h_values, successors):
                      h_value=h_values[start]
                      )
 
-    frontier = PriorityQueue()
-    frontier.push(startNode, priority=startNode.f)
+    frontier = Stack()
+    frontier.push(startNode)
 
     # expanded = {}
     expanded = []
@@ -102,17 +139,15 @@ def aStarSearch(start, goal, h_values, successors):
         # if isGoal(node):
         if node.index == goal:
             # return path_to_node
+
             solutions.append((node.index, node.f))
-            while node.parent is not None:
-                node = node.parent
-                solutions.append((node.index, node.f))
-            solutions.reverse()
             return solutions
 
         # if node not in expanded:
         if node.index not in expanded:
             # expanded.add(node)
             expanded.append(node.index)
+            solutions.append((node.index, node.f))
             triples = expand(node.index, successors)  # (parent, child, cost)
             for i in triples:
                 child_index = i[1]
@@ -123,7 +158,7 @@ def aStarSearch(start, goal, h_values, successors):
                                   cost=child_cost,
                                   h_value=h_values[child_index]
                                   )
-                frontier.push(child_node, priority=child_node.f)
+                frontier.push(child_node)
     return None
 
 
