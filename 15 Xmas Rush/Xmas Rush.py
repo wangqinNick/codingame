@@ -51,6 +51,12 @@ def can_go(grid, row, col, direction):
     col_dest = col + d_col[direction]
     return grid[row][col][direction] == '1' and inside(row_dest, col_dest) and grid[row_dest][col_dest][inv_dir(direction)] == '1'
 
+def print_moves(dirs):
+    assert len(dirs) != 0
+    print("MOVE", end="")
+    for i in dirs:
+        print(" {}".format(dir_name[i]), end="")
+    print()
 
 class Player:
     def __init__(self):
@@ -69,11 +75,16 @@ class Player:
     def can_go(self, grid, direction):
         """
         Check if can go to UP / RIGHT / DOWN / LEFT
+        :param grid: the grid
         :param direction: 0, 1, 2, 3, 4 for UP, RIGHT, DOWN, LEFT
         :return: TRUE / FALSE
         """
         return can_go(grid, self.row, self.col, direction)
 
+    def go(self, grid, dir):
+        assert self.can_go(grid, dir)
+        self.row += d_row[dir]
+        self.col += d_col[dir]
 
 def run():
     while True:
@@ -99,15 +110,19 @@ def run():
             quest_player_id = int(inputs[1])
 
         if turn_type == TURN_MOVE:
-            has_moved = False
-            for dir_ in range(4):
-                if me.can_go(grid, dir_):
-                    print("MOVE {}".format(dir_name[dir_]))
-                    has_moved = True
-                    break
-            if not has_moved:
+            moves = []
+            for rep in range(20):
+                for dir in range(4):
+                    if me.can_go(grid, dir):
+                        moves.append(dir)
+                        me.go(grid, dir)
+                        break
+
+            if len(moves) == 0:
                 log("NO WAY TO MOVE AT ALL!")
                 print("PASS")
+            else:
+                print_moves(moves)
         else:
             # Todo: PUSH Turn
             print("PUSH 3 RIGHT")
