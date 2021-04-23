@@ -14,6 +14,9 @@ dir_name = ["UP", "RIGHT", "DOWN", "LEFT"]
 TURN_MOVE = 1
 TURN_PUSH = 0
 
+def is_vertical(dir):
+    return dir == 0 or dir == 2
+
 # [['1', '1', '0', '0',], ...]
 
 def read_grid():
@@ -112,7 +115,9 @@ def run():
         if turn_type == TURN_MOVE:
             moves = []
             for rep in range(20):
-                for dir in range(4):
+                dir_list = [0, 1, 2, 3]
+                random.shuffle(dir_list)
+                for dir in dir_list:
                     if me.can_go(grid, dir):
                         moves.append(dir)
                         me.go(grid, dir)
@@ -124,8 +129,12 @@ def run():
             else:
                 print_moves(moves)
         else:
-            # Todo: PUSH Turn
-            print("PUSH 3 RIGHT")
+            dir_push = random.randint(0, 3)
+            to_push = me.row
+            if is_vertical(dir_push):
+                to_push = me.col
+
+            print("PUSH {0} {1}".format(to_push, dir_name[dir_push]))
 
 
 if __name__ == '__main__':
