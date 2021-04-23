@@ -1,21 +1,35 @@
-import numpy
+import math
 import random
-import numpy
 import sys
+
+""" for debugging only """
+
 
 def log(msg):
     print(msg, file=sys.stderr, flush=True)
+
+
+""" Const """
+MY_ID = 0
+HIS_ID = 1
 # grid size
 N = 7
 # Up, Right, Down, Left
 d_row = [-1, 0, 1, 0]
-d_col= [0, 1, 0, -1]
+d_col = [0, 1, 0, -1]
 dir_name = ["UP", "RIGHT", "DOWN", "LEFT"]
 TURN_MOVE = 1
 TURN_PUSH = 0
 
-def is_vertical(dir):
-    return dir == 0 or dir == 2
+class Util:
+    @classmethod
+    def is_vertical(cls, dir):
+        return dir == 0 or dir == 2
+
+    @classmethod
+    def manhattan_distance(cls, x0, y0, x1, y1):
+        return abs(x0 - x1) + abs(y0 - y1)
+
 
 # [['1', '1', '0', '0',], ...]
 
@@ -52,7 +66,9 @@ def can_go(grid, row, col, direction):
     assert 0 <= direction <= 3  # Up, Right, Down, Left
     row_dest = row + d_row[direction]
     col_dest = col + d_col[direction]
-    return grid[row][col][direction] == '1' and inside(row_dest, col_dest) and grid[row_dest][col_dest][inv_dir(direction)] == '1'
+    return grid[row][col][direction] == '1' and inside(row_dest, col_dest) and grid[row_dest][col_dest][
+        inv_dir(direction)] == '1'
+
 
 def print_moves(dirs):
     assert len(dirs) != 0
@@ -60,6 +76,7 @@ def print_moves(dirs):
     for i in dirs:
         print(" {}".format(dir_name[i]), end="")
     print()
+
 
 class Player:
     def __init__(self):
@@ -89,6 +106,29 @@ class Player:
         self.row += d_row[dir]
         self.col += d_col[dir]
 
+
+class Item:
+    def __init__(self):
+        self.name = None
+        self.row = None
+        self.col = None
+        self.player = None
+
+    def read(self):
+        inputs = input().split()
+        self.name = inputs[0]
+        self.col = int(inputs[1])
+        self.row = int(inputs[2])
+        self.player = int(inputs[3])
+
+
+class Goal(Item):
+    def __init__(self, row, col):
+        super(Goal, self).__init__()
+        self.row = row
+        self.col = col
+
+
 def run():
     while True:
         turn_type = int(input())
@@ -98,19 +138,30 @@ def run():
         me.read()
         he.read()
 
-        # Todo: refactor
         num_items = int(input())  # the total number of items available on board and on player tiles
-        for i in range(num_items):
-            inputs = input().split()
-            item_name = inputs[0]
-            item_x = int(inputs[1])
-            item_y = int(inputs[2])
-            item_player_id = int(inputs[3])
+
+        items = []
+        for _ in range(num_items):
+            item = Item()
+            item.read()
+            items.append(item)
+
         num_quests = int(input())  # the total number of revealed quests for both players
+        goal = None
+
         for i in range(num_quests):
             inputs = input().split()
             quest_item_name = inputs[0]
             quest_player_id = int(inputs[1])
+
+            # search for the goal
+            if quest_player_id == MY_ID:
+                for item in items:
+                    if item.name == quest_item_name and item.player == MY_ID:
+                        goal = Goal(row=item.row, col=item.col)
+
+            # the goal must be found
+            assert goal is not None
 
         if turn_type == TURN_MOVE:
             moves = []
@@ -118,10 +169,15 @@ def run():
                 dir_list = [0, 1, 2, 3]
                 random.shuffle(dir_list)
                 for dir in dir_list:
+                    row_next = me.row + d_row[dir]
+                    col_next = me.col + d_col[dir]
+                    distance_to_goal_now = Util.manhattan_distance(me.row, me.col, goal.row, goal.col)
+                    distance_to_goal_next = Util.manhattan_distance(row_next, col_next, goal.row, goal.col)
                     if me.can_go(grid, dir):
-                        moves.append(dir)
-                        me.go(grid, dir)
-                        break
+                        if goal.row == -1 or goal.row == -2 or distance_to_goal_now > distance_to_goal_next:
+                            moves.append(dir)
+                            me.go(grid, dir)
+                            break
 
             if len(moves) == 0:
                 log("NO WAY TO MOVE AT ALL!")
@@ -131,7 +187,7 @@ def run():
         else:
             dir_push = random.randint(0, 3)
             to_push = me.row
-            if is_vertical(dir_push):
+            if Util.is_vertical(dir_push):
                 to_push = me.col
 
             print("PUSH {0} {1}".format(to_push, dir_name[dir_push]))
